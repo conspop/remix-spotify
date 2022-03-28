@@ -14,6 +14,17 @@ const client_secret = process.env.CLIENT_SECRET;
 const authUrl = `https://accounts.spotify.com/authorize?client_id=${client_id}&response_type=${response_type}&redirect_uri=${redirect_uri}&scope=${scope}&state=${state}`;
 const tokenUrl = "https://accounts.spotify.com/api/token";
 
+function generateRandomString(length) {
+  var text = "";
+  var possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  for (var i = 0; i < length; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
 export function spotifyAuth() {
   throw redirect(authUrl);
 }
@@ -113,13 +124,30 @@ export async function getPlaylists(request) {
   return playlists;
 }
 
-function generateRandomString(length) {
-  var text = "";
-  var possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+export async function getProfile(request) {
+  const token = await getToken(request);
 
-  for (var i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  if (!token) {
+    return null;
   }
-  return text;
+
+  const { access_token, refresh_token } = token;
+
+  const response = await fetch("https://api.spotify.com/v1/me", {
+    headers: {
+      Authorization: "Bearer " + access_token,
+    },
+  }).then((response) => {
+    if (response.ok) {
+      return response.json();
+    } else {
+      return null;
+    }
+  });
+
+  if (!response) {
+    throw await spotifyRefresh(refresh_token);
+  }
+
+  return response;
 }

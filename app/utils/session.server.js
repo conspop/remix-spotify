@@ -23,6 +23,15 @@ export async function createSession(redirectTo, token) {
   });
 }
 
+export async function destroySession(request) {
+  const session = await storage.getSession(request.headers.get("Cookie"));
+  return redirect("/", {
+    headers: {
+      "Set-Cookie": await storage.destroySession(session),
+    },
+  });
+}
+
 function getSession(request) {
   return storage.getSession(request.headers.get("Cookie"));
 }
@@ -30,8 +39,5 @@ function getSession(request) {
 export async function getToken(request) {
   const session = await getSession(request);
   const token = session.get("token");
-  if (!token) {
-    spotifyAuth();
-  }
   return token;
 }
